@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rifa con propósito · Números disponibles</title>
+<meta name="description" content="Mira en vivo qué números de la rifa siguen disponibles.">
+<meta property="og:title" content="Rifa con propósito · Números disponibles">
+<meta property="og:description" content="Mira en vivo qué números de la rifa siguen disponibles.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#6a5596">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23f6f3ec' d='M12 0c.7 6.9 4.9 11.3 12 12-7.1.7-11.3 5.1-12 12-.7-6.9-4.9-11.3-12-12C7.1 11.3 11.3 6.9 12 0z'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Kaushan+Script&family=Quicksand:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body class="publica">
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="estrella" viewBox="0 0 24 24"><path d="M12 0c.7 6.9 4.9 11.3 12 12-7.1.7-11.3 5.1-12 12-.7-6.9-4.9-11.3-12-12C7.1 11.3 11.3 6.9 12 0z"/></symbol>
+</svg>
+
+<p id="aviso" class="aviso" hidden></p>
+
+<main>
+  <header class="hero">
+    <svg class="estrella e1" viewBox="0 0 24 24" aria-hidden="true"><use href="#estrella"/></svg>
+    <svg class="estrella e2" viewBox="0 0 24 24" aria-hidden="true"><use href="#estrella"/></svg>
+    <svg class="estrella e3" viewBox="0 0 24 24" aria-hidden="true"><use href="#estrella"/></svg>
+    <svg class="estrella e4" viewBox="0 0 24 24" aria-hidden="true"><use href="#estrella"/></svg>
+    <h1 class="rifa">RIFA</h1>
+    <p class="subtitulo" id="subtitulo">Con propósito</p>
+    <p class="premio" id="premio">$1.000.000</p>
+    <p class="precio" id="precio">$30.000 cada número</p>
+  </header>
+
+  <section class="tarjeta" aria-labelledby="titulo-tablero">
+    <h2 id="titulo-tablero" class="sr-only">Números de la rifa</h2>
+    <div class="estado-tablero">
+      <p class="quedan" id="quedan" aria-live="polite">Cargando números…</p>
+    </div>
+    <div class="barra" role="presentation"><i id="progreso"></i></div>
+    <p class="actualizado" id="actualizado"></p>
+
+    <ol class="tablero" id="tablero" aria-label="Los 100 números de la rifa, del 00 al 99"></ol>
+
+    <div class="leyenda" aria-hidden="true">
+      <span><i class="l"></i> Disponible</span>
+      <span><i class="o"></i> Vendida</span>
+    </div>
+    <p class="mensaje-carga" id="mensajeCarga" role="status" hidden></p>
+
+    <div class="datos">
+      <div class="llave">
+        <small>Llave:</small>
+        <span class="tel" id="tel">(319) 386-6037</span>
+        <span class="nombre" id="contacto">Karen Medina</span>
+      </div>
+      <div class="juega">
+        <small>Juega el:</small>
+        <span class="dia" id="dia">30</span>
+        <span class="mes" id="mes">octubre</span>
+        <span class="loteria" id="loteria">Lotería de Risaralda</span>
+      </div>
+      <p class="cuenta" id="cuenta"></p>
+    </div>
+
+    <div class="acciones">
+      <button class="btn btn-primary" id="btnCompartir" type="button">📤 Compartir esta rifa</button>
+      <a class="btn btn-ghost" id="btnWhatsapp" href="#" target="_blank" rel="noopener" hidden>Apartar mi número por WhatsApp</a>
+      <button class="btn btn-ghost" id="btnCopiar" type="button" hidden>Copiar llave</button>
+    </div>
+  </section>
+
+  <p class="pie">Solo puedes consultar los números. Para apartar uno, escríbele a quien organiza la rifa. · <a href="admin.html" id="lnkAdmin">Administrar</a></p>
+</main>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<noscript><p class="aviso error">Necesitas activar JavaScript para ver los números de la rifa.</p></noscript>
+
+<script src="js/config.js"></script>
+<script src="js/logic.js"></script>
+<script src="js/store.js"></script>
+<script src="js/public.js"></script>
+</body>
+</html>

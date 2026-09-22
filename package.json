@@ -1,0 +1,16 @@
+{
+  "name": "rifa",
+  "private": true,
+  "description": "Rifa de 100 números: vista pública de solo lectura + panel de administración.",
+  "scripts": {
+    "serve": "python -m http.server 5173",
+    "test": "npm run test:logic && npm run test:rules",
+    "test:logic": "node --test tests/logic.test.js",
+    "test:rules": "npx --yes firebase-tools emulators:exec --only firestore --project demo-rifa \"node --test tests/rules.test.mjs\"",
+    "emuladores": "npx --yes firebase-tools emulators:start --only auth,firestore --project demo-rifa"
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "^5.0.2",
+    "firebase": "^12.0.0"
+  }
+}

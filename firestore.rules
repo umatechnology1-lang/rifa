@@ -1,0 +1,28 @@
+rules_version = '2';
+
+// Reglas de seguridad de la rifa.
+//   · rifa/publico   → cualquiera puede LEER (qué números están ocupados). Solo el admin escribe.
+//   · privado/ventas → nombres, teléfonos y pagos. Solo el admin lee y escribe.
+//   · todo lo demás  → bloqueado.
+//
+// Cambia tu_correo@gmail.com por el correo del usuario administrador que creas en
+// Firebase → Authentication → Users (ver README.md, paso 3).
+// Escríbelo TODO EN MINÚSCULAS: Firebase guarda los correos así y la comparación distingue mayúsculas.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function esAdmin() {
+      return request.auth != null
+        && request.auth.token.email in ['tu_correo@gmail.com'];
+    }
+
+    match /rifa/{doc} {
+      allow read: if true;
+      allow write: if esAdmin();
+    }
+
+    match /privado/{doc} {
+      allow read, write: if esAdmin();
+    }
+  }
+}

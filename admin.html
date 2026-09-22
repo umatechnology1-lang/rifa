@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Administrar rifa</title>
+<meta name="theme-color" content="#1a1631">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23f6f3ec' d='M12 0c.7 6.9 4.9 11.3 12 12-7.1.7-11.3 5.1-12 12-.7-6.9-4.9-11.3-12-12C7.1 11.3 11.3 6.9 12 0z'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Kaushan+Script&family=Quicksand:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body class="admin">
+
+<p id="aviso" class="aviso" hidden></p>
+
+<div id="cargando" class="pantalla" role="status">Cargando…</div>
+
+<!-- Inicio de sesión -->
+<main id="login" class="pantalla" hidden>
+  <form class="login" id="formLogin" autocomplete="on" novalidate>
+    <h1>Administrar</h1>
+    <p>Entra con la cuenta de administrador de la rifa.</p>
+    <p class="error-form" id="loginError" role="alert" hidden></p>
+    <label class="campo"><span>Correo</span>
+      <input type="email" id="loginEmail" name="email" autocomplete="username" inputmode="email" required>
+    </label>
+    <label class="campo"><span>Contraseña</span>
+      <input type="password" id="loginClave" name="password" autocomplete="current-password" required>
+    </label>
+    <button class="btn btn-primary" id="btnEntrar" type="submit" style="width:100%">Entrar</button>
+    <p style="margin:1rem 0 0;text-align:center"><a href="index.html" id="lnkPublicaLogin">Ver la vista pública</a></p>
+  </form>
+</main>
+
+<!-- Panel -->
+<div id="panel" class="panel" hidden>
+  <header class="barra-admin">
+    <h1>Rifa <small id="hSubtitulo">Con propósito</small></h1>
+    <div class="herramientas">
+      <span class="sync" id="sync" role="status"></span>
+      <button class="btn btn-ghost btn-sm" id="btnCompartir" type="button">Compartir disponibles</button>
+      <button class="btn btn-ghost btn-sm" id="btnAjustes" type="button">Ajustes</button>
+      <a class="btn btn-ghost btn-sm" id="lnkPublica" href="index.html">Vista pública</a>
+      <button class="btn btn-ghost btn-sm" id="btnSalir" type="button">Salir</button>
+    </div>
+  </header>
+
+  <section class="dinero" aria-label="Dinero">
+    <div class="dato recaudado"><small>Recaudado</small><b id="recaudado">$0</b></div>
+    <div class="dato por-cobrar"><small>Por cobrar</small><b id="porCobrar">$0</b></div>
+  </section>
+
+  <section class="filtros" aria-label="Filtrar números">
+    <button class="chip" type="button" data-f="todos" aria-pressed="true">Todos <b id="cTodos">100</b></button>
+    <button class="chip" type="button" data-f="libres" aria-pressed="false">Libres <b id="cLibres">100</b></button>
+    <button class="chip" type="button" data-f="sin_pagar" aria-pressed="false">✕ Sin pagar <b id="cSinPagar">0</b></button>
+    <button class="chip" type="button" data-f="abono" aria-pressed="false">◐ Abonó <b id="cAbono">0</b></button>
+    <button class="chip" type="button" data-f="pago" aria-pressed="false">✓ Pagó <b id="cPago">0</b></button>
+    <input class="buscar" id="buscar" type="search" placeholder="Buscar nombre o número" aria-label="Buscar por nombre o número" autocomplete="off">
+  </section>
+
+  <ol class="tablero-admin" id="tablero" aria-label="Números de la rifa"></ol>
+</div>
+
+<!-- Asignar / editar un número -->
+<dialog id="dlgVenta" aria-labelledby="vTitulo">
+  <form class="dialogo" id="formVenta" novalidate>
+    <h2 id="vTitulo">Número 00</h2>
+    <p class="sub" id="vSub"></p>
+    <p class="error-form" id="vError" role="alert" hidden></p>
+
+    <label class="campo" id="cNombre"><span>Nombre de quien compra</span>
+      <input type="text" id="vNombre" maxlength="80" autocomplete="off" required>
+    </label>
+    <label class="campo" id="cTelefono"><span>Teléfono (opcional)</span>
+      <input type="tel" id="vTelefono" maxlength="30" inputmode="tel" autocomplete="off">
+    </label>
+
+    <fieldset class="estados" id="cEstado">
+      <legend>Estado del pago</legend>
+      <div class="opciones">
+        <label><input type="radio" name="estado" value="sin_pagar"><span>✕ Sin pagar</span></label>
+        <label><input type="radio" name="estado" value="abono"><span>◐ Abonó</span></label>
+        <label><input type="radio" name="estado" value="pago"><span>✓ Pagó</span></label>
+      </div>
+    </fieldset>
+
+    <label class="campo" id="cAbonado" hidden><span>¿Cuánto abonó? (en pesos)</span>
+      <input type="text" id="vAbonado" inputmode="numeric" autocomplete="off" placeholder="Ej: 10000">
+      <p class="debe" id="vDebe"></p>
+    </label>
+
+    <label class="campo" id="cNota"><span>Nota (opcional)</span>
+      <textarea id="vNota" maxlength="240" rows="2"></textarea>
+    </label>
+
+    <div class="pie-dialogo">
+      <button class="btn btn-danger izq" id="btnLiberar" type="button">Liberar número</button>
+      <button class="btn btn-ghost" id="btnCancelar" type="button">Cancelar</button>
+      <button class="btn btn-primary" id="btnGuardar" type="submit">Guardar</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Ajustes de la rifa -->
+<dialog id="dlgAjustes" aria-labelledby="aTitulo">
+  <form class="dialogo" id="formAjustes" novalidate>
+    <h2 id="aTitulo">Ajustes de la rifa</h2>
+    <p class="sub">Esto es lo que ven las personas en la vista pública.</p>
+    <p class="error-form" id="aError" role="alert" hidden></p>
+
+    <label class="campo" id="aCSubtitulo"><span>Título</span><input type="text" id="aSubtitulo" maxlength="40" autocomplete="off"></label>
+    <div class="dos-col">
+      <label class="campo" id="aCPremio"><span>Premio (pesos)</span><input type="text" id="aPremio" inputmode="numeric" autocomplete="off"></label>
+      <label class="campo" id="aCPrecio"><span>Precio por número</span><input type="text" id="aPrecio" inputmode="numeric" autocomplete="off"></label>
+    </div>
+    <div class="dos-col">
+      <label class="campo" id="aCFecha"><span>Fecha en que juega</span><input type="date" id="aFecha"></label>
+      <label class="campo" id="aCLoteria"><span>Lotería</span><input type="text" id="aLoteria" maxlength="40" autocomplete="off"></label>
+    </div>
+    <div class="dos-col">
+      <label class="campo" id="aCContacto"><span>Nombre de contacto</span><input type="text" id="aContacto" maxlength="40" autocomplete="off"></label>
+      <label class="campo" id="aCTelefono"><span>Llave / WhatsApp</span><input type="tel" id="aTelefono" maxlength="20" inputmode="tel" autocomplete="off"></label>
+    </div>
+    <p class="ayuda" style="margin:-.3rem 0 0;font-size:.82rem;color:var(--muted)">Si cambias el precio, los abonos ya registrados se mantienen tal cual.</p>
+
+    <div class="pie-dialogo">
+      <button class="btn btn-ghost" id="aCancelar" type="button">Cancelar</button>
+      <button class="btn btn-primary" id="aGuardar" type="submit">Guardar ajustes</button>
+    </div>
+  </form>
+</dialog>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<noscript><p class="aviso error">Necesitas activar JavaScript para administrar la rifa.</p></noscript>
+
+<script src="js/config.js"></script>
+<script src="js/logic.js"></script>
+<script src="js/store.js"></script>
+<script src="js/admin.js"></script>
+</body>
+</html>

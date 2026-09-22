@@ -1,0 +1,24 @@
+// ─── Conexión a Firebase ───────────────────────────────────────────────────
+// Mientras apiKey diga "TU_API_KEY" la rifa funciona en MODO LOCAL: los datos se guardan
+// solo en este navegador. Para verla y editarla desde cualquier dispositivo, crea un proyecto
+// en Firebase y pega aquí tu configuración (ver README.md, paso 2).
+window.RIFA_FIREBASE_CONFIG = {
+  apiKey: "TU_API_KEY",
+  authDomain: "TU_PROYECTO.firebaseapp.com",
+  projectId: "TU_PROYECTO",
+  storageBucket: "TU_PROYECTO.firebasestorage.app",
+  messagingSenderId: "000000000000",
+  appId: "TU_APP_ID"
+};
+
+// ─── Valores iniciales de la rifa ──────────────────────────────────────────
+// Salen del volante. Después se cambian desde Administrar → Ajustes, sin tocar este archivo.
+window.RIFA_DEFAULTS = {
+  subtitulo: "Con propósito",
+  premio: 1000000,
+  precio: 30000,
+  fecha: "2026-10-30",
+  loteria: "Lotería de Risaralda",
+  contactoNombre: "Karen Medina",
+  telefono: "3193866037"
+};
