@@ -13,7 +13,7 @@ service cloud.firestore {
 
     function esAdmin() {
       return request.auth != null
-        && request.auth.token.email in ['tu_correo@gmail.com'];
+        && request.auth.token.email in ['umatechnology1@gmail.com'];
     }
 
     match /rifa/{doc} {

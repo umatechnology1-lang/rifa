@@ -3,12 +3,12 @@
 // solo en este navegador. Para verla y editarla desde cualquier dispositivo, crea un proyecto
 // en Firebase y pega aquí tu configuración (ver README.md, paso 2).
 window.RIFA_FIREBASE_CONFIG = {
-  apiKey: "TU_API_KEY",
-  authDomain: "TU_PROYECTO.firebaseapp.com",
-  projectId: "TU_PROYECTO",
-  storageBucket: "TU_PROYECTO.firebasestorage.app",
-  messagingSenderId: "000000000000",
-  appId: "TU_APP_ID"
+  apiKey: "AIzaSyCPqTJA_If6052K-Gve6dZyFepae9iPLxQ",
+  authDomain: "rifa-3aa53.firebaseapp.com",
+  projectId: "rifa-3aa53",
+  storageBucket: "rifa-3aa53.firebasestorage.app",
+  messagingSenderId: "39681801773",
+  appId: "1:39681801773:web:d7290cbb6cda4b594d42a4"
 };
 
 // ─── Valores iniciales de la rifa ──────────────────────────────────────────
