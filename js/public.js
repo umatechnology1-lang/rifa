@@ -187,7 +187,7 @@
     btn.textContent = 'Reservando…';
     $('#rError').hidden = true;
     try {
-      await store.saveSale(n, res.venta);
+      await store.saveSale(n, { ...res.venta, creado: true }); // true = "es nueva, pon la fecha de ahora"
       try { sessionStorage.setItem(K_MI_RESERVA, JSON.stringify({ n, nombre: res.venta.nombre })); } catch (e2) { /* sin permiso */ }
       mostrarExito(n, res.venta.nombre);
     } catch (err) {

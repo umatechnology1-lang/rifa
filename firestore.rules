@@ -28,15 +28,17 @@ service cloud.firestore {
     }
 
     // Datos de la venta que puede crear la propia persona al autorreservar un número:
-    // nunca puede llegar marcada como pagada ni con un abono falso.
+    // nunca puede llegar marcada como pagada ni con un abono falso, y "creado" debe ser
+    // la hora real del servidor (no un valor que alguien invente para verse más antiguo).
     function esReservaPropiaValida() {
       let d = request.resource.data;
-      return d.keys().hasOnly(['nombre', 'telefono', 'estado', 'abonado', 'nota'])
+      return d.keys().hasOnly(['nombre', 'telefono', 'estado', 'abonado', 'nota', 'creado'])
         && d.estado == 'sin_pagar'
         && d.abonado == 0
         && d.nombre is string && d.nombre.size() > 0 && d.nombre.size() <= 60
         && d.telefono is string && d.telefono.size() <= 20
-        && d.nota is string && d.nota.size() <= 200;
+        && d.nota is string && d.nota.size() <= 200
+        && d.creado == request.time;
     }
 
     match /config/{doc} {

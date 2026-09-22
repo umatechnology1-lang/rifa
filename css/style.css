@@ -220,6 +220,29 @@ button, input, textarea, select { font: inherit; color: inherit; }
 .dato.recaudado b { color: var(--ok); }
 .dato.por-cobrar b { color: var(--warn); }
 
+.vistas { display: flex; gap: .5rem; margin-top: 1.25rem; border-bottom: 1px solid var(--line); }
+.vista-btn {
+  padding: .6rem 1rem; border: 0; border-bottom: 2px solid transparent; background: none;
+  font-weight: 700; font-size: .95rem; color: var(--muted); cursor: pointer;
+}
+.vista-btn[aria-selected="true"] { color: #fff; border-color: var(--cream); }
+
+.recientes { list-style: none; margin: 1rem 0 0; padding: 0; display: flex; flex-direction: column; gap: .5rem; }
+.reciente {
+  display: flex; align-items: center; gap: .8rem; width: 100%; padding: .6rem .9rem;
+  border: 1.5px solid var(--line); border-radius: 14px; background: rgba(255, 255, 255, .06);
+  cursor: pointer; text-align: left; transition: background-color .15s;
+}
+.reciente:hover { background: rgba(255, 255, 255, .13); }
+.reciente-n { flex: 0 0 auto; font-family: var(--f-display); font-weight: 400; font-size: 1.6rem; letter-spacing: .02em; color: var(--cream); min-width: 2ch; }
+.reciente-datos { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
+.reciente-nombre { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.reciente-cuando { font-size: .82rem; color: var(--muted); }
+.reciente-marca { flex: 0 0 auto; font-size: 1.1rem; font-weight: 700; }
+.reciente-marca.sin_pagar { color: var(--bad); }
+.reciente-marca.abono { color: var(--warn); }
+.reciente-marca.pago { color: var(--ok); }
+
 .filtros { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; margin-top: 1rem; }
 .chip {
   display: inline-flex; align-items: center; gap: .45rem; min-height: 40px; padding: .3rem .85rem;

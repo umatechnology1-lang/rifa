@@ -160,6 +160,7 @@
         : fantasma ? `Número ${n}, ocupado sin datos, revisar` : `Número ${n}, libre`);
     }
     vacio.hidden = visibles.size > 0;
+    if (state.vista === 'recientes') renderRecientes();
     pintarSync();
   }
 
@@ -185,6 +186,60 @@
   $('#buscar').addEventListener('input', (e) => { state.q = e.target.value; render(); });
   window.addEventListener('online', pintarSync);
   window.addEventListener('offline', pintarSync);
+
+  /* ---------- Pestaña "Recientes" ---------- */
+
+  const recientesLista = $('#recientes');
+  state.vista = 'tablero';
+  function cambiarVista(v) {
+    state.vista = v;
+    $('#vistaTableroBtn').setAttribute('aria-selected', String(v === 'tablero'));
+    $('#vistaRecientesBtn').setAttribute('aria-selected', String(v === 'recientes'));
+    $('#panelTablero').hidden = v !== 'tablero';
+    $('#panelRecientes').hidden = v !== 'recientes';
+    if (v === 'recientes') renderRecientes();
+  }
+  $('#vistaTableroBtn').addEventListener('click', () => cambiarVista('tablero'));
+  $('#vistaRecientesBtn').addEventListener('click', () => cambiarVista('recientes'));
+
+  function renderRecientes() {
+    const conFecha = [];
+    const sinFecha = [];
+    for (const n of L.NUMEROS) {
+      const v = state.ventas[n];
+      if (!v) continue;
+      (v.creado ? conFecha : sinFecha).push([n, v]);
+    }
+    conFecha.sort((a, b) => b[1].creado - a[1].creado);
+    const filas = [...conFecha, ...sinFecha].slice(0, 20);
+
+    recientesLista.innerHTML = '';
+    if (!filas.length) {
+      const li = document.createElement('li');
+      li.className = 'vacio';
+      li.textContent = 'Todavía no hay ningún número reservado.';
+      recientesLista.appendChild(li);
+      return;
+    }
+    for (const [n, v] of filas) {
+      const li = document.createElement('li');
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'reciente';
+      b.innerHTML = `
+        <span class="reciente-n">${n}</span>
+        <span class="reciente-datos">
+          <span class="reciente-nombre">${v.nombre}</span>
+          <span class="reciente-cuando">${v.creado ? L.tiempoRelativo(v.creado) : 'Fecha desconocida (venta antigua)'}</span>
+        </span>
+        <span class="reciente-marca ${v.estado}">${MARCA[v.estado]}</span>
+      `;
+      b.addEventListener('click', () => abrirVenta(n));
+      li.appendChild(b);
+      recientesLista.appendChild(li);
+    }
+  }
+  setInterval(() => { if (state.vista === 'recientes') renderRecientes(); }, 30000);
 
   /* ---------- Asignar / editar un número ---------- */
 
@@ -244,6 +299,7 @@
   formV.addEventListener('submit', (e) => {
     e.preventDefault();
     const n = numActual;
+    const esNuevo = !state.ventas[n]; // ya existía o se está asignando por primera vez
     const res = L.validarVenta({
       nombre: $('#vNombre').value,
       telefono: $('#vTelefono').value,
@@ -256,7 +312,8 @@
 
     dlgV.close();
     toast(`Guardando el ${n}…`);
-    store.saveSale(n, res.venta).then(
+    // creado:true solo la primera vez, para no cambiarle la fecha a una venta que ya existía.
+    store.saveSale(n, esNuevo ? { ...res.venta, creado: true } : res.venta).then(
       () => toast(`Número ${n} guardado ✓`),
       (err) => toast(`No se pudo guardar el ${n}: ${mensajeError(err)}`, true)
     );

@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test, before, after, beforeEach } from 'node:test';
 import { initializeTestEnvironment, assertSucceeds, assertFails } from '@firebase/rules-unit-testing';
-import { doc, getDoc, setDoc, deleteDoc, collection, getDocs } from 'firebase/firestore';
+import { doc, getDoc, setDoc, deleteDoc, collection, getDocs, serverTimestamp } from 'firebase/firestore';
 
 const ADMIN_EMAIL = 'admin@rifa.test';
 const plantilla = readFileSync(new URL('../firestore.rules', import.meta.url), 'utf8');
@@ -26,7 +26,7 @@ const anonimo = () => env.unauthenticatedContext().firestore();
 const admin = () => env.authenticatedContext('uid-admin', { email: ADMIN_EMAIL }).firestore();
 const otro = () => env.authenticatedContext('uid-otro', { email: 'otro@ejemplo.com' }).firestore();
 
-const ventaValida = { nombre: 'Ana', telefono: '3001234567', estado: 'sin_pagar', abonado: 0, nota: '' };
+const ventaValida = { nombre: 'Ana', telefono: '3001234567', estado: 'sin_pagar', abonado: 0, nota: '', creado: serverTimestamp() };
 
 async function sembrarAdmin(coleccion, id, data) {
   await env.withSecurityRulesDisabled(async (ctx) => {
@@ -110,6 +110,13 @@ test('el nombre es obligatorio y hay límites de tamaño', async () => {
 
 test('no se puede colar ningún campo extra en la venta propia', async () => {
   await assertFails(setDoc(doc(anonimo(), 'ventas/07'), { ...ventaValida, esAdmin: true }));
+});
+
+test('la fecha de reserva tiene que ser la hora real del servidor, no una inventada', async () => {
+  const { creado, ...sinFecha } = ventaValida;
+  await assertFails(setDoc(doc(anonimo(), 'ventas/07'), sinFecha)); // sin creado, para nada
+  await assertFails(setDoc(doc(anonimo(), 'ventas/07'), { ...sinFecha, creado: new Date('2020-01-01') })); // una fecha inventada
+  await assertFails(setDoc(doc(anonimo(), 'ventas/07'), { ...sinFecha, creado: 'ayer' }));
 });
 
 test('no se puede pisar una venta que ya existe (ni la propia ni la de alguien más)', async () => {

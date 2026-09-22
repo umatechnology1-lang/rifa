@@ -53,7 +53,11 @@
     const parseVentas = (d) => {
       const ventas = {};
       const src = d.ventas && typeof d.ventas === 'object' ? d.ventas : {};
-      for (const n of L.NUMEROS) if (src[n]) ventas[n] = L.normalizarVenta(src[n]);
+      for (const n of L.NUMEROS) if (src[n]) {
+        const v = L.normalizarVenta(src[n]);
+        v.creado = src[n].creado ? new Date(src[n].creado) : null;
+        ventas[n] = v;
+      }
       return ventas;
     };
 
@@ -77,11 +81,19 @@
         return () => oyentes.delete(f);
       },
 
+      // "creado: true" es una señal (no una fecha real) que solo pone admin.js/public.js
+      // en una venta NUEVA; aquí se cambia por la fecha de verdad. Si no viene, se
+      // conserva la que ya tenía (así editar el pago de alguien no le cambia la fecha
+      // en la que reservó su número).
       saveSale(num, venta) {
         const pub = leer(K_PUB), ven = leer(K_VEN);
         pub.ocupados = { ...(pub.ocupados || {}), [num]: true };
         pub.actualizado = Date.now();
-        ven.ventas = { ...(ven.ventas || {}), [num]: venta };
+        const anterior = (ven.ventas || {})[num] || {};
+        const datos = { ...venta };
+        if (datos.creado === true) datos.creado = Date.now();
+        else delete datos.creado;
+        ven.ventas = { ...(ven.ventas || {}), [num]: { ...anterior, ...datos } };
         escribir(K_PUB, pub); escribir(K_VEN, ven);
         avisar();
         return Promise.resolve();
@@ -135,6 +147,7 @@
       if (auth) auth.useEmulator('http://127.0.0.1:9099', { disableWarnings: true });
     }
 
+    const FV = firebase.firestore.FieldValue;
     const docConfig = db.doc('config/ajustes');
     const colNumeros = db.collection('numeros');
     const colVentas = db.collection('ventas');
@@ -201,14 +214,26 @@
       subscribeAdmin(cb, onError) {
         return colVentas.onSnapshot(OPT, (snap) => {
           const ventas = {};
-          snap.forEach((doc) => { ventas[doc.id] = L.normalizarVenta(doc.data()); });
+          snap.forEach((doc) => {
+            const data = doc.data();
+            const v = L.normalizarVenta(data);
+            v.creado = data.creado && data.creado.toDate ? data.creado.toDate() : null;
+            ventas[doc.id] = v;
+          });
           cb({ ventas, pendiente: snap.metadata.hasPendingWrites });
         }, onError);
       },
 
+      // "creado: true" es una señal (no una fecha real) que solo pone admin.js/public.js
+      // en una venta NUEVA; aquí se cambia por la fecha real del servidor. Si no viene,
+      // se omite del todo para que el merge conserve la fecha que ya tenía (editar el
+      // pago de alguien no le cambia la fecha en la que reservó su número).
       saveSale: (num, venta) => escribirLote((lote) => {
+        const datos = { ...venta };
+        if (datos.creado === true) datos.creado = FV.serverTimestamp();
+        else delete datos.creado;
         lote.set(colNumeros.doc(num), { ocupado: true });
-        lote.set(colVentas.doc(num), venta);
+        lote.set(colVentas.doc(num), datos, { merge: true });
       }),
       releaseNumber: (num) => escribirLote((lote) => {
         lote.delete(colNumeros.doc(num));

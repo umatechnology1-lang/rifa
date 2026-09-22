@@ -59,6 +59,7 @@ Si al iniciar sesión sale `auth/unauthorized-domain`, agrega tu dominio (`TU_US
 - **Liberar un número** (si la persona se arrepiente): toca el número → *Liberar número* (pide confirmarlo con un segundo toque).
 - **Ajustes**: título, premio, precio, fecha, lotería y datos de contacto. Se ven de inmediato en la vista pública.
 - **Compartir disponibles**: en el celular abre el menú de compartir; en el computador copia el texto para pegarlo en WhatsApp.
+- **Ver quién compró últimamente**: pestaña *Recientes* en el panel — lista los últimos 20 números reservados, del más nuevo al más viejo, con hace cuánto fue. Útil cuando la rifa se llena rápido y no alcanzas a leer cada aviso. Los números vendidos antes de que existiera esta pestaña aparecen al final como "Fecha desconocida".
 - Colores en el panel: **rojo ✕** sin pagar · **ámbar ◐** abonó · **verde ✓** pagó · **rayado ⚠** ocupado sin ninguna venta guardada (rarísimo; solo pasa si alguien escribió directo a la base de datos por fuera de la app) · sin color = libre.
 
 ## Cómo protege los datos

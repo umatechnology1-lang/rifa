@@ -53,16 +53,28 @@
     <div class="dato por-cobrar"><small>Por cobrar</small><b id="porCobrar">$0</b></div>
   </section>
 
-  <section class="filtros" aria-label="Filtrar números">
-    <button class="chip" type="button" data-f="todos" aria-pressed="true">Todos <b id="cTodos">100</b></button>
-    <button class="chip" type="button" data-f="libres" aria-pressed="false">Libres <b id="cLibres">100</b></button>
-    <button class="chip" type="button" data-f="sin_pagar" aria-pressed="false">✕ Sin pagar <b id="cSinPagar">0</b></button>
-    <button class="chip" type="button" data-f="abono" aria-pressed="false">◐ Abonó <b id="cAbono">0</b></button>
-    <button class="chip" type="button" data-f="pago" aria-pressed="false">✓ Pagó <b id="cPago">0</b></button>
-    <input class="buscar" id="buscar" type="search" placeholder="Buscar nombre o número" aria-label="Buscar por nombre o número" autocomplete="off">
-  </section>
+  <div class="vistas" role="tablist">
+    <button class="vista-btn" id="vistaTableroBtn" type="button" role="tab" aria-selected="true">Tablero</button>
+    <button class="vista-btn" id="vistaRecientesBtn" type="button" role="tab" aria-selected="false">Recientes</button>
+  </div>
 
-  <ol class="tablero-admin" id="tablero" aria-label="Números de la rifa"></ol>
+  <div id="panelTablero">
+    <section class="filtros" aria-label="Filtrar números">
+      <button class="chip" type="button" data-f="todos" aria-pressed="true">Todos <b id="cTodos">100</b></button>
+      <button class="chip" type="button" data-f="libres" aria-pressed="false">Libres <b id="cLibres">100</b></button>
+      <button class="chip" type="button" data-f="sin_pagar" aria-pressed="false">✕ Sin pagar <b id="cSinPagar">0</b></button>
+      <button class="chip" type="button" data-f="abono" aria-pressed="false">◐ Abonó <b id="cAbono">0</b></button>
+      <button class="chip" type="button" data-f="pago" aria-pressed="false">✓ Pagó <b id="cPago">0</b></button>
+      <input class="buscar" id="buscar" type="search" placeholder="Buscar nombre o número" aria-label="Buscar por nombre o número" autocomplete="off">
+    </section>
+
+    <ol class="tablero-admin" id="tablero" aria-label="Números de la rifa"></ol>
+  </div>
+
+  <div id="panelRecientes" hidden>
+    <p class="ayuda" style="margin-top:1rem">Las últimas reservas, más reciente primero. Toca una para revisarla.</p>
+    <ol class="recientes" id="recientes" aria-label="Últimos números reservados"></ol>
+  </div>
 </div>
 
 <!-- Asignar / editar un número -->
