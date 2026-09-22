@@ -1,11 +1,22 @@
 rules_version = '2';
 
 // Reglas de seguridad de la rifa.
-//   · rifa/publico   → cualquiera puede LEER (qué números están ocupados). Solo el admin escribe.
-//   · privado/ventas → nombres, teléfonos y pagos. Solo el admin lee y escribe.
-//   · todo lo demás  → bloqueado.
 //
-// Cambia tu_correo@gmail.com por el correo del usuario administrador que creas en
+// Modelo de datos (cada número es su PROPIO documento; esto es lo que hace posible
+// que el público pueda reservar un número sin poder tocar ningún otro dato):
+//   · config/ajustes    → título, premio, precio, fecha, contacto. Lectura pública, solo el admin escribe.
+//   · numeros/{n}       → EXISTE si el número {n} está ocupado (no importa el contenido). Lectura pública.
+//                          El admin puede crear/editar/borrar cualquiera. El público SOLO puede
+//                          crear uno (reservarlo) si todavía no existía; nunca puede editarlo ni borrarlo,
+//                          o sea que nunca puede "robarse" ni "liberar" un número ajeno.
+//   · ventas/{n}        → nombre, teléfono y estado de pago de quien tiene el número {n}. Nadie más
+//                          que el admin puede LEER esto (ni siquiera quien lo reservó). El público
+//                          SOLO puede crear su propia entrada la primera vez, siempre con estado
+//                          "sin_pagar" y abono en 0 — jamás puede marcarse a sí mismo como pagado,
+//                          ni editar o borrar una entrada ya existente (ni la propia ni la ajena).
+//   · todo lo demás     → bloqueado.
+//
+// Cambia umatechnology1@gmail.com por el correo del usuario administrador que creaste en
 // Firebase → Authentication → Users (ver README.md, paso 3).
 // Escríbelo TODO EN MINÚSCULAS: Firebase guarda los correos así y la comparación distingue mayúsculas.
 service cloud.firestore {
@@ -16,13 +27,36 @@ service cloud.firestore {
         && request.auth.token.email in ['umatechnology1@gmail.com'];
     }
 
-    match /rifa/{doc} {
+    // Datos de la venta que puede crear la propia persona al autorreservar un número:
+    // nunca puede llegar marcada como pagada ni con un abono falso.
+    function esReservaPropiaValida() {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['nombre', 'telefono', 'estado', 'abonado', 'nota'])
+        && d.estado == 'sin_pagar'
+        && d.abonado == 0
+        && d.nombre is string && d.nombre.size() > 0 && d.nombre.size() <= 60
+        && d.telefono is string && d.telefono.size() <= 20
+        && d.nota is string && d.nota.size() <= 200;
+    }
+
+    match /config/{doc} {
       allow read: if true;
       allow write: if esAdmin();
     }
 
-    match /privado/{doc} {
+    match /numeros/{n} {
+      allow read: if true;
+      allow write: if esAdmin();
+      // Reservarlo: solo si todavía no existe (si ya existe, esto cuenta como "update",
+      // no "create", y un no-admin no tiene permiso de update). Nunca marca nada más.
+      allow create: if !esAdmin()
+        && request.resource.data.keys().hasOnly(['ocupado'])
+        && request.resource.data.ocupado == true;
+    }
+
+    match /ventas/{n} {
       allow read, write: if esAdmin();
+      allow create: if !esAdmin() && esReservaPropiaValida();
     }
   }
 }

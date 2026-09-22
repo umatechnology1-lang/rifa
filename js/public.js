@@ -1,13 +1,17 @@
-/* Vista pública: solo lectura. Muestra qué números están disponibles, en tiempo real. */
+/* Vista pública: cualquiera puede ver qué números quedan y reservar uno para sí mismo.
+ * Nunca puede ver el nombre de nadie más, ni tocar un número que ya esté ocupado
+ * (eso lo garantizan las reglas de seguridad de Firestore, no solo este código). */
 (function () {
   'use strict';
 
   const L = window.RifaLogic;
   const $ = (s) => document.querySelector(s);
+  const K_MI_RESERVA = 'rifa:miReserva';
 
   const celdas = {};
   let datos = null;
   let cargado = false;
+  let store = null;
   let toastTimer;
 
   /* ---------- Tablero ---------- */
@@ -17,7 +21,11 @@
   const tablero = $('#tablero');
   L.NUMEROS.forEach((n) => {
     const li = document.createElement('li');
-    li.className = 'num cargando';
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'num cargando';
+    b.dataset.n = n;
+    b.disabled = true;
     const numero = document.createElement('span');
     numero.className = 'n';
     numero.textContent = n;
@@ -26,8 +34,9 @@
     marca.setAttribute('aria-hidden', 'true');
     const estado = document.createElement('span');
     estado.className = 'sr-only';
-    li.append(numero, marca, estado);
-    celdas[n] = { li, marca, estado };
+    b.append(numero, marca, estado);
+    li.appendChild(b);
+    celdas[n] = { b, marca, estado };
     tablero.appendChild(li);
   });
 
@@ -80,20 +89,22 @@
     $('#mes').textContent = f ? f.mesNombre : '';
     $('#cuenta').textContent = L.textoCuentaRegresiva(L.diasRestantes(config.fecha));
 
-    const wa = L.waLink(config.telefono, `Hola${config.contactoNombre ? ' ' + config.contactoNombre.split(' ')[0] : ''}, quiero apartar un número de la rifa «${config.subtitulo}».`);
+    const wa = L.waLink(config.telefono, `Hola${config.contactoNombre ? ' ' + config.contactoNombre.split(' ')[0] : ''}, tengo una pregunta sobre la rifa «${config.subtitulo}».`);
     $('#btnWhatsapp').hidden = !wa;
     if (wa) $('#btnWhatsapp').href = wa;
     $('#btnCopiar').hidden = !L.soloDigitos(config.telefono);
 
-    // Números: una celda ocupada solo dice "Vendida", nunca un nombre.
+    // Números: una celda ocupada solo dice "Vendida", nunca un nombre. Las libres
+    // se pueden tocar para reservarlas; las ya vendidas quedan inertes.
     let libres = 0;
     for (const n of L.NUMEROS) {
       const c = celdas[n];
       const ocupado = !!ocupados[n];
       if (!ocupado) libres++;
-      c.li.className = 'num ' + (ocupado ? 'ocupado' : 'libre');
+      c.b.className = 'num ' + (ocupado ? 'ocupado' : 'libre');
+      c.b.disabled = ocupado;
       c.marca.textContent = ocupado ? 'Vendida' : '';
-      c.estado.textContent = ocupado ? ', vendida' : ', disponible';
+      c.estado.textContent = ocupado ? ', vendida' : ', disponible: toca para reservarla';
     }
 
     const quedan = $('#quedan');
@@ -102,12 +113,119 @@
     $('#progreso').style.width = `${L.TOTAL - libres}%`;
 
     refrescarHora();
+    refrescarMiReserva();
   }
 
   function refrescarHora() {
     const el = $('#actualizado');
     if (!datos || !datos.actualizado) { el.textContent = ''; return; }
     el.textContent = `Actualizado ${L.tiempoRelativo(datos.actualizado)}`;
+  }
+
+  /* ---------- Reservar un número ---------- */
+
+  const dlg = $('#dlgReservar');
+  const form = $('#formReservar');
+  const pasoElegir = $('#pasoElegir');
+  const pasoExito = $('#pasoExito');
+  const CONT_R = { nombre: $('#rCNombre'), telefono: $('#rCTelefono') };
+  let numActual = null;
+
+  function marcarErrores(errores) {
+    form.querySelectorAll('.error-campo').forEach((e) => e.remove());
+    form.querySelectorAll('.con-error').forEach((e) => e.classList.remove('con-error'));
+    let primero = null;
+    for (const [campo, msg] of Object.entries(errores)) {
+      const cont = CONT_R[campo];
+      if (!cont) continue;
+      cont.classList.add('con-error');
+      const p = document.createElement('p');
+      p.className = 'error-campo';
+      p.setAttribute('role', 'alert');
+      p.textContent = msg;
+      cont.appendChild(p);
+      primero = primero || cont.querySelector('input');
+    }
+    if (primero) primero.focus();
+  }
+
+  function limpiarErrorAlEscribir() {
+    form.querySelectorAll('.con-error').forEach((c) => { c.classList.remove('con-error'); c.querySelectorAll('.error-campo').forEach((p) => p.remove()); });
+  }
+  form.addEventListener('input', limpiarErrorAlEscribir);
+
+  tablero.addEventListener('click', (e) => {
+    const b = e.target.closest('button.num.libre');
+    if (!b || b.disabled) return;
+    abrirReserva(b.dataset.n);
+  });
+
+  function abrirReserva(n) {
+    numActual = n;
+    $('#rTitulo').textContent = `Número ${n}`;
+    $('#rError').hidden = true;
+    marcarErrores({});
+    $('#rNombre').value = '';
+    $('#rTelefono').value = '';
+    $('#rConfirmar').disabled = false;
+    $('#rConfirmar').textContent = `Sí, quiero el número ${n}`;
+    pasoElegir.hidden = false;
+    pasoExito.hidden = true;
+    dlg.showModal();
+    $('#rNombre').focus();
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const n = numActual;
+    const res = L.validarReserva({ nombre: $('#rNombre').value, telefono: $('#rTelefono').value });
+    marcarErrores(res.errores);
+    if (!res.ok) return;
+
+    const btn = $('#rConfirmar');
+    btn.disabled = true;
+    btn.textContent = 'Reservando…';
+    $('#rError').hidden = true;
+    try {
+      await store.saveSale(n, res.venta);
+      try { sessionStorage.setItem(K_MI_RESERVA, JSON.stringify({ n, nombre: res.venta.nombre })); } catch (e2) { /* sin permiso */ }
+      mostrarExito(n, res.venta.nombre);
+    } catch (err) {
+      console.error(err);
+      const msg = err && err.code === 'permission-denied'
+        ? 'Uy, alguien más acaba de reservar este número. Elige otro.'
+        : 'No se pudo reservar. Revisa tu conexión e inténtalo de nuevo.';
+      $('#rError').textContent = msg;
+      $('#rError').hidden = false;
+      btn.disabled = false;
+      btn.textContent = `Sí, quiero el número ${n}`;
+    }
+  });
+
+  function mostrarExito(n, nombre) {
+    pasoElegir.hidden = true;
+    pasoExito.hidden = false;
+    $('#rExitoTexto').textContent = `Reservaste el número ${n}.`;
+    const wa = datos && L.waLink(datos.config.telefono, L.textoReserva(datos.config, n, nombre));
+    const btnWa = $('#rWhatsapp');
+    if (wa) { btnWa.href = wa; btnWa.hidden = false; } else { btnWa.hidden = true; }
+  }
+
+  $('#rCancelar').addEventListener('click', () => dlg.close());
+  $('#rCerrar').addEventListener('click', () => dlg.close());
+
+  // Si cerró el diálogo de éxito sin avisar por WhatsApp, deja un botón visible
+  // el resto de la visita para que pueda avisar cuando quiera.
+  function refrescarMiReserva() {
+    let mia = null;
+    try { mia = JSON.parse(sessionStorage.getItem(K_MI_RESERVA) || 'null'); } catch (e) { /* nada */ }
+    const banner = $('#miReserva');
+    if (!mia || !datos || !datos.ocupados[mia.n]) { banner.hidden = true; return; }
+    const wa = L.waLink(datos.config.telefono, L.textoReserva(datos.config, mia.n, mia.nombre));
+    if (!wa) { banner.hidden = true; return; }
+    $('#miReservaTexto').textContent = `Reservaste el número ${mia.n}.`;
+    $('#miReservaWa').href = wa;
+    banner.hidden = false;
   }
 
   /* ---------- Errores y carga ---------- */
@@ -163,7 +281,8 @@
   }, 8000);
   setInterval(refrescarHora, 30000);
 
-  window.RifaStore.init({ auth: false }).then((store) => {
+  window.RifaStore.init({ auth: false }).then((s) => {
+    store = s;
     const aviso = $('#aviso');
     if (store.emulador) {
       aviso.textContent = 'Modo de prueba: estás usando los emuladores de Firebase, no los datos reales.';

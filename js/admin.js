@@ -8,6 +8,7 @@
 
   const state = {
     config: L.configCompleta({}, window.RIFA_DEFAULTS),
+    ocupados: {},
     ventas: {},
     filtro: 'todos',
     q: '',
@@ -145,14 +146,18 @@
     for (const n of L.NUMEROS) {
       const c = celdas[n];
       const v = ventas[n];
+      // "Fantasma": el número aparece ocupado en la vista pública pero no hay ninguna
+      // venta guardada. Solo pasa si alguien escribió directo a la base de datos por
+      // fuera de la app; se marca aparte para que se note y se pueda revisar o liberar.
+      const fantasma = !v && !!state.ocupados[n];
       c.li.hidden = !visibles.has(n);
       c.b.disabled = !ok;
-      c.b.className = 'celda ' + (v ? v.estado : 'libre');
-      c.marca.textContent = v ? MARCA[v.estado] : '';
-      c.quien.textContent = v ? v.nombre : 'libre';
+      c.b.className = 'celda ' + (v ? v.estado : fantasma ? 'fantasma' : 'libre');
+      c.marca.textContent = v ? MARCA[v.estado] : fantasma ? '⚠' : '';
+      c.quien.textContent = v ? v.nombre : fantasma ? 'Sin datos: revisar' : 'libre';
       c.b.setAttribute('aria-label', v
         ? `Número ${n}, ${v.nombre}, ${L.ESTADO_TEXTO[v.estado]}`
-        : `Número ${n}, libre`);
+        : fantasma ? `Número ${n}, ocupado sin datos, revisar` : `Número ${n}, libre`);
     }
     vacio.hidden = visibles.size > 0;
     pintarSync();
@@ -214,9 +219,12 @@
 
   function abrirVenta(n) {
     const v = state.ventas[n];
+    const fantasma = !v && !!state.ocupados[n];
     numActual = n;
     $('#vTitulo').textContent = `Número ${n}`;
-    $('#vSub').textContent = v ? 'Edita los datos de esta venta.' : 'Está disponible. Asígnalo a una persona.';
+    $('#vSub').textContent = v ? 'Edita los datos de esta venta.'
+      : fantasma ? 'Este número quedó ocupado pero sin ninguna venta guardada. Complétalo o libéralo.'
+      : 'Está disponible. Asígnalo a una persona.';
     $('#vError').hidden = true;
     marcarErrores(formV, CONT_V, {});
     $('#vNombre').value = v ? v.nombre : '';
@@ -226,7 +234,7 @@
     formV.querySelector(`input[name="estado"][value="${estado}"]`).checked = true;
     $('#vAbonado').value = v && v.estado === L.ABONO ? plano(v.abonado) : '';
     actualizarAbono();
-    $('#btnLiberar').hidden = !v;
+    $('#btnLiberar').hidden = !(v || fantasma);
     reiniciarLiberar();
     $('#btnGuardar').disabled = false;
     dlgV.showModal();
@@ -374,7 +382,7 @@
     $('#btnSalir').hidden = store.mode === 'local';
     render();
     bajas.push(store.subscribePublic((d) => {
-      state.config = d.config; state.cargadoPub = true; state.pendPub = d.pendiente; render();
+      state.config = d.config; state.ocupados = d.ocupados; state.cargadoPub = true; state.pendPub = d.pendiente; render();
     }, falloLectura));
     bajas.push(store.subscribeAdmin((d) => {
       state.ventas = d.ventas; state.cargadoVen = true; state.pendVen = d.pendiente; render();

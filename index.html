@@ -43,7 +43,7 @@
     <div class="barra" role="presentation"><i id="progreso"></i></div>
     <p class="actualizado" id="actualizado"></p>
 
-    <ol class="tablero" id="tablero" aria-label="Los 100 números de la rifa, del 00 al 99"></ol>
+    <ol class="tablero" id="tablero" aria-label="Los 100 números de la rifa, del 00 al 99. Toca uno disponible para reservarlo"></ol>
 
     <div class="leyenda" aria-hidden="true">
       <span><i class="l"></i> Disponible</span>
@@ -66,15 +66,54 @@
       <p class="cuenta" id="cuenta"></p>
     </div>
 
+    <div class="mi-reserva" id="miReserva" role="status" hidden>
+      <p id="miReservaTexto"></p>
+      <a class="btn btn-primary btn-sm" id="miReservaWa" href="#" target="_blank" rel="noopener">📲 Avisar por WhatsApp</a>
+    </div>
+
     <div class="acciones">
       <button class="btn btn-primary" id="btnCompartir" type="button">📤 Compartir esta rifa</button>
-      <a class="btn btn-ghost" id="btnWhatsapp" href="#" target="_blank" rel="noopener" hidden>Apartar mi número por WhatsApp</a>
+      <a class="btn btn-ghost" id="btnWhatsapp" href="#" target="_blank" rel="noopener" hidden>¿Dudas? Escríbenos por WhatsApp</a>
       <button class="btn btn-ghost" id="btnCopiar" type="button" hidden>Copiar llave</button>
     </div>
   </section>
 
-  <p class="pie">Solo puedes consultar los números. Para apartar uno, escríbele a quien organiza la rifa. · <a href="admin.html" id="lnkAdmin">Administrar</a></p>
+  <p class="pie">Toca un número disponible para reservarlo. · <a href="admin.html" id="lnkAdmin">Administrar</a></p>
 </main>
+
+<!-- Reservar un número -->
+<dialog id="dlgReservar" aria-labelledby="rTitulo">
+  <form class="dialogo" id="formReservar" novalidate>
+    <div id="pasoElegir">
+      <h2 id="rTitulo">Número 00</h2>
+      <p class="sub">Este número está disponible. Resérvalo con tu nombre.</p>
+      <p class="error-form" id="rError" role="alert" hidden></p>
+
+      <label class="campo" id="rCNombre"><span>Tu nombre</span>
+        <input type="text" id="rNombre" maxlength="60" autocomplete="name" required>
+      </label>
+      <label class="campo" id="rCTelefono"><span>Tu teléfono (opcional)</span>
+        <input type="tel" id="rTelefono" maxlength="20" inputmode="tel" autocomplete="tel">
+      </label>
+      <p class="ayuda">Al confirmar, este número queda reservado a tu nombre. Coordina el pago con quien organiza la rifa.</p>
+
+      <div class="pie-dialogo">
+        <button class="btn btn-ghost" id="rCancelar" type="button">Cancelar</button>
+        <button class="btn btn-primary" id="rConfirmar" type="submit">Sí, quiero este número</button>
+      </div>
+    </div>
+
+    <div id="pasoExito" hidden>
+      <h2>🎉 ¡Reservado!</h2>
+      <p class="sub" id="rExitoTexto">Reservaste el número 00.</p>
+      <p class="ayuda">Avísale a quien organiza la rifa para coordinar el pago.</p>
+      <div class="pie-dialogo">
+        <button class="btn btn-ghost" id="rCerrar" type="button">Cerrar</button>
+        <a class="btn btn-primary" id="rWhatsapp" href="#" target="_blank" rel="noopener">📲 Avisar por WhatsApp</a>
+      </div>
+    </div>
+  </form>
+</dialog>
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <noscript><p class="aviso error">Necesitas activar JavaScript para ver los números de la rifa.</p></noscript>

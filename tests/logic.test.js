@@ -140,6 +140,37 @@ test('validarVenta: errores', () => {
   assert.ok(L.validarVenta({ nombre: 'Ana', estado: 'pago', nota: 'n'.repeat(201) }, precio).errores.nota);
 });
 
+test('validarReserva: siempre queda sin_pagar y abonado 0, así se lo pidan distinto', () => {
+  const ok = L.validarReserva({ nombre: '  Pedro   Pérez ', telefono: '3001234567' });
+  assert.equal(ok.ok, true);
+  assert.deepEqual(ok.venta, { nombre: 'Pedro Pérez', telefono: '3001234567', estado: 'sin_pagar', abonado: 0, nota: L.NOTA_AUTORRESERVA });
+
+  // aunque alguien intente colar estado/abonado, la función los ignora por completo
+  const forzado = L.validarReserva({ nombre: 'Ana', estado: 'pago', abonado: 99999 });
+  assert.equal(forzado.venta.estado, 'sin_pagar');
+  assert.equal(forzado.venta.abonado, 0);
+});
+
+test('validarReserva: errores', () => {
+  assert.ok(L.validarReserva({ nombre: '' }).errores.nombre);
+  assert.ok(L.validarReserva({ nombre: '   ' }).errores.nombre);
+  assert.ok(L.validarReserva({ nombre: 'x'.repeat(61) }).errores.nombre);
+  assert.ok(L.validarReserva({ nombre: 'Ana', telefono: '1'.repeat(21) }).errores.telefono);
+  assert.equal(L.validarReserva({ nombre: 'Ana' }).ok, true); // el teléfono es opcional
+});
+
+test('textoReserva', () => {
+  const cfg = L.configCompleta({}, DEFAULTS);
+  const t = L.textoReserva(cfg, '07', 'Pedro Pérez');
+  assert.match(t, /Hola Karen/);
+  assert.match(t, /número \*07\*/);
+  assert.match(t, /rifa «Con propósito»/);
+  assert.match(t, /Pedro Pérez/);
+  // sin nombre de contacto, el saludo no debe quedar con un espacio colgando
+  const sinContacto = L.textoReserva({ ...cfg, contactoNombre: '' }, '07', 'Ana');
+  assert.match(sinContacto, /^¡Hola! /);
+});
+
 test('resumen: totales y dinero', () => {
   const ventas = {
     '00': { nombre: 'A', estado: 'pago', abonado: 30000 },

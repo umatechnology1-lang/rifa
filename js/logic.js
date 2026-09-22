@@ -171,6 +171,32 @@
     return { ok: !Object.keys(errores).length, errores, venta: { nombre, telefono, estado, abonado, nota } };
   }
 
+  const NOTA_AUTORRESERVA = 'Reservado desde la página pública.';
+
+  // Cuando la propia persona reserva su número (sin pasar por el admin). Nunca deja
+  // que se marque a sí misma como pagada: eso lo sigue confirmando el organizador.
+  function validarReserva(input) {
+    const errores = {};
+    const nombre = String(input.nombre || '').replace(/\s+/g, ' ').trim();
+    const telefono = String(input.telefono || '').trim();
+
+    if (!nombre) errores.nombre = 'Escribe tu nombre.';
+    else if (nombre.length > 60) errores.nombre = 'El nombre es muy largo (máximo 60 letras).';
+    if (telefono.length > 20) errores.telefono = 'El teléfono es muy largo.';
+
+    return {
+      ok: !Object.keys(errores).length,
+      errores,
+      venta: { nombre, telefono, estado: SIN_PAGAR, abonado: 0, nota: NOTA_AUTORRESERVA },
+    };
+  }
+
+  // Mensaje de WhatsApp que confirma "ya reservé este número", listo para el organizador.
+  function textoReserva(config, numero, nombre) {
+    const quien = config.contactoNombre ? ` ${config.contactoNombre.split(' ')[0]}` : '';
+    return `¡Hola${quien}! 🎟️ Reservé el número *${numero}* de la rifa «${config.subtitulo}». Mi nombre es ${nombre}. Quedo atento(a) para coordinar el pago.`;
+  }
+
   // Totales para el panel de administración.
   function resumen(ventas, precio) {
     const r = { vendidos: 0, disponibles: TOTAL, pagados: 0, abonos: 0, sinPagar: 0, recaudado: 0, porCobrar: 0 };
@@ -234,6 +260,7 @@
     formatCOP, parseMonto, soloDigitos, formatTelefono, waLink,
     fechaParts, diasRestantes, textoCuentaRegresiva, tiempoRelativo,
     configCompleta, validarConfig, normalizarVenta, validarVenta,
+    validarReserva, textoReserva, NOTA_AUTORRESERVA,
     resumen, normalizarTexto, filtrarNumeros, textoDisponibles,
   };
 });

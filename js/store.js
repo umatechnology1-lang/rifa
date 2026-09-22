@@ -2,10 +2,11 @@
  *   · local    → localStorage del navegador (sin config de Firebase; útil para probar).
  *   · firebase → Firestore + Auth, para verla y editarla desde cualquier dispositivo.
  *
- * Datos en Firestore:
- *   rifa/publico   (lectura pública)  → ajustes de la rifa + ocupados { "07": true } + actualizado
- *   privado/ventas (solo el admin)    → ventas { "07": { nombre, telefono, estado, abonado, nota } }
- * Así cualquiera puede ver qué números quedan, pero solo el admin ve nombres y pagos.
+ * Datos en Firestore (cada número es su PROPIO documento; así el público puede reservar
+ * uno sin poder tocar ningún otro dato — ver firestore.rules):
+ *   config/ajustes  (lectura pública)     → título, premio, precio, fecha, contacto…
+ *   numeros/{n}     (lectura pública)     → EXISTE si el número {n} está ocupado.
+ *   ventas/{n}      (solo lee el admin)   → { nombre, telefono, estado, abonado, nota } de ese número.
  */
 (function () {
   'use strict';
@@ -18,31 +19,6 @@
   // ?emulator en localhost → usa los emuladores de Firebase (pruebas), sin tocar datos reales.
   const EMULADOR = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) && new URLSearchParams(location.search).has('emulator');
   const CONFIGURADO = !!CFG.apiKey && !/^TU_/.test(CFG.apiKey);
-
-  /* ---------- Conversión de documentos ---------- */
-
-  function aFecha(v) {
-    if (!v) return null;
-    if (typeof v.toDate === 'function') return v.toDate();
-    const d = new Date(v);
-    return isNaN(d) ? null : d;
-  }
-
-  function parsePublico(d) {
-    d = d && typeof d === 'object' ? d : {};
-    const ocupados = {};
-    if (d.ocupados && typeof d.ocupados === 'object') {
-      for (const n of L.NUMEROS) if (d.ocupados[n]) ocupados[n] = true;
-    }
-    return { config: L.configCompleta(d, DEFAULTS), ocupados, actualizado: aFecha(d.actualizado) };
-  }
-
-  function parseVentas(d) {
-    const ventas = {};
-    const src = d && d.ventas && typeof d.ventas === 'object' ? d.ventas : {};
-    for (const n of L.NUMEROS) if (src[n]) ventas[n] = L.normalizarVenta(src[n]);
-    return ventas;
-  }
 
   /* ---------- Modo local ---------- */
 
@@ -67,6 +43,20 @@
     const avisar = () => oyentes.forEach((f) => f());
     window.addEventListener('storage', avisar); // otra pestaña cambió algo
 
+    const parsePublico = (d) => {
+      const ocupados = {};
+      if (d.ocupados && typeof d.ocupados === 'object') {
+        for (const n of L.NUMEROS) if (d.ocupados[n]) ocupados[n] = true;
+      }
+      return { config: L.configCompleta(d, DEFAULTS), ocupados, actualizado: d.actualizado ? new Date(d.actualizado) : null };
+    };
+    const parseVentas = (d) => {
+      const ventas = {};
+      const src = d.ventas && typeof d.ventas === 'object' ? d.ventas : {};
+      for (const n of L.NUMEROS) if (src[n]) ventas[n] = L.normalizarVenta(src[n]);
+      return ventas;
+    };
+
     return {
       mode: 'local',
       emulador: false,
@@ -81,7 +71,7 @@
         return () => oyentes.delete(f);
       },
       subscribeAdmin(cb) {
-        const f = () => cb({ ventas: parseVentas({ ventas: leer(K_VEN).ventas }), pendiente: false });
+        const f = () => cb({ ventas: parseVentas(leer(K_VEN)), pendiente: false });
         oyentes.add(f);
         f();
         return () => oyentes.delete(f);
@@ -145,14 +135,52 @@
       if (auth) auth.useEmulator('http://127.0.0.1:9099', { disableWarnings: true });
     }
 
-    const FV = firebase.firestore.FieldValue;
-    const docPub = db.doc('rifa/publico');
-    const docVen = db.doc('privado/ventas');
+    const docConfig = db.doc('config/ajustes');
+    const colNumeros = db.collection('numeros');
+    const colVentas = db.collection('ventas');
     const OPT = { includeMetadataChanges: true };
 
-    // Un documento que aún no llegó del servidor (caché vacía) no se toma como "no existe":
-    // así nunca se muestran todos los números libres solo porque no hay conexión.
-    const autoritativo = (snap) => !(snap.metadata.fromCache && !snap.exists);
+    // Combina dos listeners (un doc + una colección) en un solo callback, y evita mostrar
+    // un estado "vacío" solo porque la caché local todavía no tiene nada (sin conexión).
+    // Un error de cualquiera de los dos se avisa igual por onError.
+    function combinarDos(sub1, sub2, combinar) {
+      return (cb, onError) => {
+        let d1 = null, d2 = null, huboReal1 = false, huboReal2 = false;
+        const emitir = () => { if (huboReal1 && huboReal2) cb(combinar(d1, d2)); };
+        const baja1 = sub1((datos, esReal) => { d1 = datos; huboReal1 = huboReal1 || esReal; emitir(); }, onError);
+        const baja2 = sub2((datos, esReal) => { d2 = datos; huboReal2 = huboReal2 || esReal; emitir(); }, onError);
+        return () => { baja1(); baja2(); };
+      };
+    }
+
+    function oyenteDoc(ref) {
+      return (cb, onError) => ref.onSnapshot(OPT, (snap) => {
+        // fromCache + no existe todavía en absoluto ≠ "de verdad no existe": puede que
+        // simplemente aún no haya llegado nada del servidor (por ejemplo, sin conexión).
+        const esReal = !snap.metadata.fromCache || snap.exists;
+        cb({ datos: snap.data({ serverTimestamps: 'estimate' }) || {}, pendiente: snap.metadata.hasPendingWrites }, esReal);
+      }, onError);
+    }
+    function oyenteColeccion(ref) {
+      return (cb, onError) => ref.onSnapshot(OPT, (snap) => {
+        const esReal = !snap.metadata.fromCache || snap.size > 0;
+        const mapa = {};
+        snap.forEach((doc) => { mapa[doc.id] = doc.data(); });
+        cb({ mapa, pendiente: snap.metadata.hasPendingWrites }, esReal);
+      }, onError);
+    }
+
+    const suscribirPublico = combinarDos(oyenteDoc(docConfig), oyenteColeccion(colNumeros), (cfg, num) => {
+      const ocupados = {};
+      for (const n of L.NUMEROS) if (num.mapa[n]) ocupados[n] = true;
+      return {
+        config: L.configCompleta(cfg.datos, DEFAULTS),
+        ocupados,
+        actualizado: new Date(), // el momento en que llegó esta actualización (ya no un campo del servidor)
+        pendiente: cfg.pendiente || num.pendiente,
+      };
+    });
+
     const escribirLote = (armar) => {
       const lote = db.batch();
       armar(lote);
@@ -169,28 +197,24 @@
       signIn: (email, clave) => auth.signInWithEmailAndPassword(email, clave),
       signOut: () => auth.signOut(),
 
-      subscribePublic(cb, onError) {
-        return docPub.onSnapshot(OPT, (snap) => {
-          if (!autoritativo(snap)) return;
-          cb({ ...parsePublico(snap.data({ serverTimestamps: 'estimate' })), pendiente: snap.metadata.hasPendingWrites });
-        }, onError);
-      },
+      subscribePublic(cb, onError) { return suscribirPublico(cb, onError); },
       subscribeAdmin(cb, onError) {
-        return docVen.onSnapshot(OPT, (snap) => {
-          if (!autoritativo(snap)) return;
-          cb({ ventas: parseVentas(snap.data()), pendiente: snap.metadata.hasPendingWrites });
+        return colVentas.onSnapshot(OPT, (snap) => {
+          const ventas = {};
+          snap.forEach((doc) => { ventas[doc.id] = L.normalizarVenta(doc.data()); });
+          cb({ ventas, pendiente: snap.metadata.hasPendingWrites });
         }, onError);
       },
 
       saveSale: (num, venta) => escribirLote((lote) => {
-        lote.set(docVen, { ventas: { [num]: venta } }, { merge: true });
-        lote.set(docPub, { ocupados: { [num]: true }, actualizado: FV.serverTimestamp() }, { merge: true });
+        lote.set(colNumeros.doc(num), { ocupado: true });
+        lote.set(colVentas.doc(num), venta);
       }),
       releaseNumber: (num) => escribirLote((lote) => {
-        lote.set(docVen, { ventas: { [num]: FV.delete() } }, { merge: true });
-        lote.set(docPub, { ocupados: { [num]: FV.delete() }, actualizado: FV.serverTimestamp() }, { merge: true });
+        lote.delete(colNumeros.doc(num));
+        lote.delete(colVentas.doc(num));
       }),
-      saveConfig: (config) => docPub.set({ ...config, actualizado: FV.serverTimestamp() }, { merge: true }),
+      saveConfig: (config) => docConfig.set(config, { merge: true }),
     };
   }
 

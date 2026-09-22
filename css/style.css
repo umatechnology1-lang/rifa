@@ -129,22 +129,32 @@ button, input, textarea, select { font: inherit; color: inherit; }
   list-style: none; margin: 1rem 0 0; padding: 0;
   border-top: 1px solid var(--line); border-left: 1px solid var(--line);
 }
+.tablero > li { display: contents; } /* el <li> es solo semántico; el <button> es el celda real de la grilla */
 .num {
-  aspect-ratio: 1 / 1;
+  aspect-ratio: 1 / 1; width: 100%;
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
-  border-right: 1px solid var(--line); border-bottom: 1px solid var(--line);
-  font-variant-numeric: tabular-nums; letter-spacing: .02em;
+  border: 0; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); border-radius: 0;
+  font-family: inherit; font-variant-numeric: tabular-nums; letter-spacing: .02em;
   transition: background-color .3s, color .3s;
 }
 .num .n { font-size: clamp(11px, 4.6cqw, 24px); font-weight: 700; line-height: 1; }
 .num .marca { font-size: clamp(5.5px, 1.7cqw, 9px); font-weight: 700; line-height: 1; text-transform: uppercase; letter-spacing: .03em; }
-.num.libre { color: #fff; background: rgba(255, 255, 255, .1); }
-.num.ocupado { color: rgba(255, 255, 255, .5); background: rgba(0, 0, 0, .3); }
+.num.libre { color: #fff; background: rgba(255, 255, 255, .1); cursor: pointer; }
+.num.libre:hover { background: rgba(255, 255, 255, .22); }
+.num.libre:active { background: rgba(255, 255, 255, .3); }
+.num.ocupado { color: rgba(255, 255, 255, .5); background: rgba(0, 0, 0, .3); cursor: default; }
 .num.ocupado .n { text-decoration: line-through; text-decoration-thickness: 2px; font-weight: 500; }
 .num.ocupado .marca { color: var(--bad); }
-.num.cargando { color: rgba(255, 255, 255, .25); animation: latido 1.4s ease-in-out infinite; }
+.num.cargando { color: rgba(255, 255, 255, .25); cursor: default; animation: latido 1.4s ease-in-out infinite; }
 @keyframes latido { 50% { background: rgba(255, 255, 255, .1); } }
 @media (prefers-reduced-motion: reduce) { .num.cargando { animation: none; } }
+
+.mi-reserva {
+  display: flex; align-items: center; justify-content: space-between; gap: .75rem; flex-wrap: wrap;
+  margin-top: 1rem; padding: .7rem 1rem; border-radius: 14px;
+  background: rgba(76, 210, 138, .16); border: 1px solid rgba(76, 210, 138, .5);
+}
+.mi-reserva p { margin: 0; font-weight: 700; }
 
 .leyenda { display: flex; gap: 1.2rem; flex-wrap: wrap; margin: .9rem .2rem 0; font-size: .88rem; color: var(--muted); }
 .leyenda span { display: inline-flex; align-items: center; gap: .45rem; }
@@ -188,7 +198,8 @@ button, input, textarea, select { font: inherit; color: inherit; }
 }
 .campo textarea { min-height: 76px; resize: vertical; }
 .campo input:focus, .campo textarea:focus { outline: none; border-color: var(--cream); box-shadow: 0 0 0 3px rgba(246, 243, 236, .25); }
-.campo .ayuda { margin: .3rem 0 0; font-size: .82rem; color: var(--muted); }
+.ayuda { margin: .3rem 0 1rem; font-size: .82rem; color: var(--muted); }
+.campo .ayuda { margin: .3rem 0 0; }
 .campo.con-error input, .campo.con-error textarea { border-color: var(--bad); }
 .error-campo { margin: .3rem 0 0; font-size: .85rem; font-weight: 700; color: var(--bad); }
 .error-form { margin: 0 0 1rem; padding: .6rem .8rem; border-radius: 10px; background: rgba(255, 127, 127, .16); border: 1px solid rgba(255, 127, 127, .5); color: #ffd0d0; font-size: .92rem; font-weight: 700; }
@@ -243,6 +254,9 @@ button, input, textarea, select { font: inherit; color: inherit; }
 .celda.sin_pagar .marca { color: var(--bad); }
 .celda.abono .marca { color: var(--warn); }
 .celda.pago .marca { color: var(--ok); }
+.celda.fantasma { background: repeating-linear-gradient(45deg, rgba(255,255,255,.06), rgba(255,255,255,.06) 6px, rgba(0,0,0,.2) 6px, rgba(0,0,0,.2) 12px); border-color: var(--warn); border-style: dashed; }
+.celda.fantasma .marca { color: var(--warn); }
+.celda.fantasma .quien { color: var(--warn); }
 .vacio { grid-column: 1 / -1; padding: 2rem 1rem; text-align: center; color: var(--muted); }
 
 /* ─── Ventanas (dialog) ─────────────────────────────────────────────────── */
