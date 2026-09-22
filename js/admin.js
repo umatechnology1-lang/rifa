@@ -384,7 +384,9 @@
   $('#formLogin').addEventListener('submit', async (e) => {
     e.preventDefault();
     const err = $('#loginError');
-    const email = $('#loginEmail').value.trim();
+    // Sin espacios: el teclado del celular a veces mete uno antes de la "@" y
+    // Firebase rechaza el correo entero como "inválido" por ese solo espacio.
+    const email = $('#loginEmail').value.replace(/\s+/g, '');
     const clave = $('#loginClave').value;
     if (!email || !clave) {
       err.textContent = 'Escribe tu correo y tu contraseña.';
