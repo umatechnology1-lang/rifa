@@ -92,13 +92,13 @@ button, input, textarea, select { font: inherit; color: inherit; }
 
 .hero .rifa {
   margin: 0; font-family: var(--f-display); font-weight: 400; color: var(--cream);
-  font-size: clamp(76px, 25vw, 150px); line-height: .95; letter-spacing: .01em;
+  font-size: clamp(53px, 17.5vw, 105px); line-height: .95; letter-spacing: .01em;
   text-align: left; padding-left: 4%;
   text-shadow: 0 3px 18px rgba(30, 15, 70, .35);
 }
 .hero .subtitulo {
   margin: -.15em 0 0; font-family: var(--f-script); color: var(--cream);
-  font-size: clamp(34px, 10.5vw, 62px); line-height: 1.05; text-align: center;
+  font-size: clamp(24px, 7.4vw, 43px); line-height: 1.05; text-align: center;
   text-shadow: 0 3px 14px rgba(30, 15, 70, .4);
   padding-left: 22%;
 }
