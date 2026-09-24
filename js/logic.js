@@ -191,6 +191,15 @@
     };
   }
 
+  // Un número libre al azar (o null si no queda ninguno). "excluir" evita repetir el que
+  // ya salió cuando la persona pide "otro"; si es el único libre, se devuelve igual.
+  function numeroAlAzar(ocupados, excluir, rnd = Math.random) {
+    const libres = NUMEROS.filter((n) => !(ocupados && ocupados[n]));
+    if (!libres.length) return null;
+    const opciones = libres.length > 1 ? libres.filter((n) => n !== excluir) : libres;
+    return opciones[Math.min(Math.floor(rnd() * opciones.length), opciones.length - 1)];
+  }
+
   // Mensaje de WhatsApp que confirma "ya reservé este número", listo para el organizador.
   function textoReserva(config, numero, nombre) {
     const quien = config.contactoNombre ? ` ${config.contactoNombre.split(' ')[0]}` : '';
@@ -260,7 +269,7 @@
     formatCOP, parseMonto, soloDigitos, formatTelefono, waLink,
     fechaParts, diasRestantes, textoCuentaRegresiva, tiempoRelativo,
     configCompleta, validarConfig, normalizarVenta, validarVenta,
-    validarReserva, textoReserva, NOTA_AUTORRESERVA,
+    validarReserva, textoReserva, NOTA_AUTORRESERVA, numeroAlAzar,
     resumen, normalizarTexto, filtrarNumeros, textoDisponibles,
   };
 });

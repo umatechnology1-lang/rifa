@@ -159,6 +159,23 @@ test('validarReserva: errores', () => {
   assert.equal(L.validarReserva({ nombre: 'Ana' }).ok, true); // el teléfono es opcional
 });
 
+test('numeroAlAzar solo elige números libres', () => {
+  const ocupados = {};
+  for (const n of L.NUMEROS) if (n !== '42' && n !== '77') ocupados[n] = true;
+  for (let i = 0; i < 50; i++) assert.ok(['42', '77'].includes(L.numeroAlAzar(ocupados)));
+  // "otro número" no repite el que acaba de salir…
+  for (let i = 0; i < 20; i++) assert.equal(L.numeroAlAzar(ocupados, '42'), '77');
+  // …salvo que sea el único que queda
+  delete ocupados['00']; ocupados['42'] = true; ocupados['77'] = true;
+  assert.equal(L.numeroAlAzar(ocupados, '00'), '00');
+  // sin libres: null; y un random que devuelve justo 1 no se sale del arreglo
+  const todos = Object.fromEntries(L.NUMEROS.map((n) => [n, true]));
+  assert.equal(L.numeroAlAzar(todos), null);
+  assert.equal(L.numeroAlAzar({}, null, () => 0), '00');
+  assert.equal(L.numeroAlAzar({}, null, () => 0.9999999), '99');
+  assert.equal(L.numeroAlAzar({}, null, () => 1), '99');
+});
+
 test('textoReserva', () => {
   const cfg = L.configCompleta({}, DEFAULTS);
   const t = L.textoReserva(cfg, '07', 'Pedro Pérez');

@@ -107,6 +107,9 @@
       c.estado.textContent = ocupado ? ', vendida' : ', disponible: toca para reservarla';
     }
 
+    $('#btnAzar').disabled = libres === 0;
+    $('#btnAzar').hidden = libres === 0;
+
     const quedan = $('#quedan');
     if (libres === 0) quedan.textContent = '¡Se vendieron todos los números!';
     else quedan.innerHTML = `Quedan <b>${libres}</b> ${libres === 1 ? 'número disponible' : 'números disponibles'}`;
@@ -160,20 +163,42 @@
     abrirReserva(b.dataset.n);
   });
 
-  function abrirReserva(n) {
+  // Pone el número n en el diálogo sin borrar lo que la persona ya escribió
+  // (así "Otro número" no le hace volver a escribir su nombre).
+  function ponerNumero(n, azar) {
     numActual = n;
     $('#rTitulo').textContent = `Número ${n}`;
+    $('#rSub').textContent = azar
+      ? `¡Te salió el ${n}! Si te gusta, resérvalo con tu nombre.`
+      : 'Este número está disponible. Resérvalo con tu nombre.';
+    $('#rOtro').hidden = !azar;
     $('#rError').hidden = true;
+    $('#rConfirmar').disabled = false;
+    $('#rConfirmar').textContent = `Sí, quiero el número ${n}`;
+  }
+
+  function abrirReserva(n, azar = false) {
+    ponerNumero(n, azar);
     marcarErrores({});
     $('#rNombre').value = '';
     $('#rTelefono').value = '';
-    $('#rConfirmar').disabled = false;
-    $('#rConfirmar').textContent = `Sí, quiero el número ${n}`;
     pasoElegir.hidden = false;
     pasoExito.hidden = true;
     dlg.showModal();
     $('#rNombre').focus();
   }
+
+  // Número al azar: solo elige entre los que esta página ya ve libres; reservarlo
+  // sigue pasando por el mismo diálogo y las mismas reglas de siempre.
+  $('#btnAzar').addEventListener('click', () => {
+    const n = datos && L.numeroAlAzar(datos.ocupados);
+    if (!n) { toast('Ya no quedan números libres.'); return; }
+    abrirReserva(n, true);
+  });
+  $('#rOtro').addEventListener('click', () => {
+    const n = datos && L.numeroAlAzar(datos.ocupados, numActual);
+    if (n) ponerNumero(n, true);
+  });
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -206,6 +231,7 @@
     pasoElegir.hidden = true;
     pasoExito.hidden = false;
     $('#rExitoTexto').textContent = `Reservaste el número ${n}.`;
+    $('#rLlave').textContent = datos ? L.formatTelefono(datos.config.telefono) : '';
     const wa = datos && L.waLink(datos.config.telefono, L.textoReserva(datos.config, n, nombre));
     const btnWa = $('#rWhatsapp');
     if (wa) { btnWa.href = wa; btnWa.hidden = false; } else { btnWa.hidden = true; }
@@ -213,6 +239,20 @@
 
   $('#rCancelar').addEventListener('click', () => dlg.close());
   $('#rCerrar').addEventListener('click', () => dlg.close());
+  $('#rCopiarLlave').addEventListener('click', async () => {
+    const llave = datos ? L.soloDigitos(datos.config.telefono) : '';
+    if (!llave) return;
+    toast((await copiarTexto(llave)) ? 'Llave copiada' : `Llave: ${L.formatTelefono(llave)}`);
+  });
+
+  // Desde el aviso "Reservaste el número N" se puede volver a ver el QR para pagar.
+  $('#miReservaPagar').addEventListener('click', () => {
+    let mia = null;
+    try { mia = JSON.parse(sessionStorage.getItem(K_MI_RESERVA) || 'null'); } catch (e) { /* nada */ }
+    if (!mia) return;
+    mostrarExito(mia.n, mia.nombre);
+    dlg.showModal();
+  });
 
   // Si cerró el diálogo de éxito sin avisar por WhatsApp, deja un botón visible
   // el resto de la visita para que pueda avisar cuando quiera.

@@ -43,6 +43,8 @@
     <div class="barra" role="presentation"><i id="progreso"></i></div>
     <p class="actualizado" id="actualizado"></p>
 
+    <button class="btn btn-primary azar" id="btnAzar" type="button" disabled>🎲 Elegir número al azar</button>
+
     <ol class="tablero" id="tablero" aria-label="Los 100 números de la rifa, del 00 al 99. Toca uno disponible para reservarlo"></ol>
 
     <div class="leyenda" aria-hidden="true">
@@ -68,7 +70,10 @@
 
     <div class="mi-reserva" id="miReserva" role="status" hidden>
       <p id="miReservaTexto"></p>
-      <a class="btn btn-primary btn-sm" id="miReservaWa" href="#" target="_blank" rel="noopener">📲 Avisar por WhatsApp</a>
+      <div class="mi-reserva-botones">
+        <button class="btn btn-ghost btn-sm" id="miReservaPagar" type="button">💳 Pagar con QR</button>
+        <a class="btn btn-primary btn-sm" id="miReservaWa" href="#" target="_blank" rel="noopener">📲 Avisar por WhatsApp</a>
+      </div>
     </div>
 
     <div class="acciones">
@@ -86,7 +91,8 @@
   <form class="dialogo" id="formReservar" novalidate>
     <div id="pasoElegir">
       <h2 id="rTitulo">Número 00</h2>
-      <p class="sub">Este número está disponible. Resérvalo con tu nombre.</p>
+      <p class="sub" id="rSub">Este número está disponible. Resérvalo con tu nombre.</p>
+      <button class="btn btn-ghost btn-sm otro-azar" id="rOtro" type="button" hidden>🎲 Otro número</button>
       <p class="error-form" id="rError" role="alert" hidden></p>
 
       <label class="campo" id="rCNombre"><span>Tu nombre</span>
@@ -106,7 +112,19 @@
     <div id="pasoExito" hidden>
       <h2>🎉 ¡Reservado!</h2>
       <p class="sub" id="rExitoTexto">Reservaste el número 00.</p>
-      <p class="ayuda">Avísale a quien organiza la rifa para coordinar el pago.</p>
+
+      <div class="pago-qr">
+        <p class="pago-titulo">💳 Paga tu número con este QR de Bancolombia</p>
+        <img src="img/qr-pago.jpg" width="768" height="718" loading="lazy"
+             alt="Código QR de Bancolombia para pagar el número de la rifa">
+        <p class="ayuda">Si estás en el celular, guarda la imagen para pagar desde tu app, o transfiere a la llave <b id="rLlave"></b>.</p>
+        <div class="qr-acciones">
+          <a class="btn btn-ghost btn-sm" href="img/qr-pago.jpg" download="QR-pago-rifa.jpg">⬇ Guardar QR</a>
+          <button class="btn btn-ghost btn-sm" id="rCopiarLlave" type="button">Copiar llave</button>
+        </div>
+      </div>
+
+      <p class="ayuda">Después de pagar, avísale a quien organiza la rifa por WhatsApp.</p>
       <div class="pie-dialogo">
         <button class="btn btn-ghost" id="rCerrar" type="button">Cerrar</button>
         <a class="btn btn-primary" id="rWhatsapp" href="#" target="_blank" rel="noopener">📲 Avisar por WhatsApp</a>

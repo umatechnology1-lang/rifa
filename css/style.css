@@ -155,6 +155,22 @@ button, input, textarea, select { font: inherit; color: inherit; }
   background: rgba(76, 210, 138, .16); border: 1px solid rgba(76, 210, 138, .5);
 }
 .mi-reserva p { margin: 0; font-weight: 700; }
+.mi-reserva-botones { display: flex; gap: .5rem; flex-wrap: wrap; }
+
+.azar { width: 100%; margin-top: 1rem; }
+.otro-azar { margin: -.4rem 0 1rem; }
+
+.pago-qr {
+  margin: 0 0 1rem; padding: 1rem; border-radius: 16px; text-align: center;
+  background: rgba(255, 255, 255, .06); border: 1px solid var(--line);
+}
+.pago-titulo { margin: 0 0 .75rem; font-weight: 700; }
+.pago-qr img {
+  display: block; width: 100%; max-width: 260px; height: auto; margin: 0 auto;
+  border-radius: 12px; background: #fff;
+}
+.pago-qr .ayuda { margin: .75rem 0; }
+.qr-acciones { display: flex; gap: .5rem; justify-content: center; flex-wrap: wrap; }
 
 .leyenda { display: flex; gap: 1.2rem; flex-wrap: wrap; margin: .9rem .2rem 0; font-size: .88rem; color: var(--muted); }
 .leyenda span { display: inline-flex; align-items: center; gap: .45rem; }
